@@ -1,6 +1,10 @@
 Changelog
 =========
 
+2.0.0
+-----
+Major release version. Total rewrite. Main APIs should remain the same.
+
 1.7.0
 -----
 
