@@ -8,6 +8,3 @@ end
 
 task :default => :test
 
-task :install_nodoc => [:build] do
-  system "gem install pkg/suitcase-#{Suitcase::VERSION}.gem --no-ri --no-rdoc"
-end

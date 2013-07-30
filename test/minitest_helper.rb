@@ -13,3 +13,6 @@ $: << File.dirname(__FILE__) + "/../lib"
 $: << File.dirname(__FILE__)
 require "suitcase"
 
+# API key setup
+require "keys"
+
