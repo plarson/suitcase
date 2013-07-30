@@ -113,6 +113,17 @@ module Suitcase
       def dateless_search(params)
         hotel_list(destinationString: params[:location])
       end
+      
+      # Internal: Format the room group expected by the EAN API.
+      #
+      # rooms - Array of Hashes:
+      #         :adults - Integer number of adults in the room.
+      #         :children - Array of children ages in the room (default: []).
+      #
+      # Returns a String formatted room group according to the EAN API.
+      def room_group(rooms)
+        rooms.each_with_index.map { |room, i|  }
+      end
 
       # Internal: Complete the request for a Hotel list.
       #
@@ -198,6 +209,7 @@ module Suitcase
             end
           end
         end
+        binding.pry
       end
       
       # Internal: Parse the amenities of a Hotel.
@@ -214,7 +226,7 @@ module Suitcase
                   :airport, :category, :rating, :confidence_rating,
                   :amenities, :tripadvisor_rating, :location_description,
                   :short_description, :high_rate, :low_rate, :currency,
-                  :latitude, :longitude, :proximity_distance, :proximity_unit
+                  :latitude, :longitude, :proximity_distance, :proximity_unit,
                   :in_destination, :thumbnail_path, :ian_url
 
     # Internal: Create a new Hotel.
