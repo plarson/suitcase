@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Walter Nelson"]
   s.email       = ["walter.john.nelson@gmail.com"]
   s.homepage    = "http://github.com/thoughtfusion/suitcase"
-  s.summary     = %q{Locates available hotels and rental cars through Expedia and Hotwire}
-  s.description = %q{Ruby library that utilizes the EAN (Expedia.com) API for locating available hotels and the Hotwire API for rental cars.}
+  s.summary     = %q{Ruby gem for interacting with the EAN Hotel API.}
+  s.description = %q{Suitcase is a complete library for interacting with the EAN (Expedia.com) Hotel API.}
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
@@ -24,3 +24,4 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "json"
   s.add_runtime_dependency "patron"
 end
+
