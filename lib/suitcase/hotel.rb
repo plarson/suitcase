@@ -93,15 +93,16 @@ module Suitcase
       #
       # Returns a Result with search results.
       def availability_search(params)
-        hotel_list(
+        req_params = room_group({
           arrivalDate: params[:arrival],
           departureDate: params[:departure],
           numberOfResults: params[:number_of_results],
-          RoomGroup: room_group(params[:rooms]),
           includeDetails: params[:include_details],
           includeHotelFeeBreakdown: true,
           destinationString: params[:location]
-        )
+        }, params[:rooms])
+
+        hotel_list(req_params)
       end
 
       # Internal: Run a 'dateless' search for Hotels.
@@ -116,13 +117,20 @@ module Suitcase
       
       # Internal: Format the room group expected by the EAN API.
       #
-      # rooms - Array of Hashes:
-      #         :adults - Integer number of adults in the room.
-      #         :children - Array of children ages in the room (default: []).
+      # req_params  - The request parameters already set.
+      # rooms       - Array of Hashes:
+      #               :adults - Integer number of adults in the room.
+      #               :children - Array of children ages in the room (default: []).
       #
-      # Returns a String formatted room group according to the EAN API.
-      def room_group(rooms)
-        rooms.each_with_index.map { |room, i|  }
+      # Returns a Hash of request parameters.
+      def room_group(req_params, rooms)
+        rooms.each_with_index do |room, index|
+          room_n = index + 1
+          req_params["room#{room_n}"] = [room[:adults], room[:children]].
+                                        flatten.join(",")
+        end
+
+        req_params
       end
 
       # Internal: Complete the request for a Hotel list.
@@ -150,9 +158,11 @@ module Suitcase
         req_params[:cid] = Suitcase::Configuration.ean_hotel_cid
         req_params[:apiKey] = Suitcase::Configuration.ean_hotel_api_key
         req_params[:minorRev] = Suitcase::Configuration.ean_hotel_minor_rev
+        req_params = req_params.delete_if { |k, v| v == nil }
 
         req = Patron::Session.new
         params_string = req_params.inject("") do |initial, (key, value)|
+          value = (value == true ? "true" : value)
           initial + if value
                       req.urlencode(key.to_s) + "=" + req.urlencode(value) + "&"
                     else
@@ -177,7 +187,7 @@ module Suitcase
 
         if error = root["EanWsError"]
           handle(error)
-        else hotels = root["HotelList"]["HotelSummary"]
+        else hotels = [root["HotelList"]["HotelSummary"]].flatten
           hotels.map do |data|
             Hotel.new do |hotel|
               hotel.id = data["hotelId"]
@@ -209,7 +219,6 @@ module Suitcase
             end
           end
         end
-        binding.pry
       end
       
       # Internal: Parse the amenities of a Hotel.
@@ -253,3 +262,4 @@ module Suitcase
     end
   end
 end
+
