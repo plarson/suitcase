@@ -89,7 +89,10 @@ module Suitcase
       #                                 :children - Array of childrens' Integer
       #                                             ages in the room.
       #           :include_details    - Boolean. Whether to include extra
-      #                                 information with each room option.
+      #                                 information with each room option, such
+      #                                 as bed types.
+      #           :fee_breakdown      - Boolean. Whether to include fee
+      #                                 breakdown information with room results.
       #
       # Returns a Result with search results.
       def availability_search(params)
@@ -98,7 +101,7 @@ module Suitcase
           departureDate: params[:departure],
           numberOfResults: params[:number_of_results],
           includeDetails: params[:include_details],
-          includeHotelFeeBreakdown: true,
+          includeHotelFeeBreakdown: params[:fee_breakdown],
           destinationString: params[:location]
         }, params[:rooms])
 
@@ -218,10 +221,23 @@ module Suitcase
               hotel.in_destination = data["hotelInDestination"]
               hotel.thumbnail_path = data["thumbNailUrl"]
               hotel.ian_url = data["deepLink"]
+              if data["RoomRateDetailsList"]
+                hotel.rooms = parse_rooms(data["RoomRateDetailsList"])
+              end
             end
           end
         end
-      end  
+      end
+      
+      # Internal: Parse room data from a Hotel response.
+      #
+      # room_details - Hash of room details returned by the API.
+      #
+      # Returns an Array of Rooms.
+      def parse_rooms(room_details)
+        rate_details = [room_details["RoomRateDetails"]].flatten
+        rate_details.map { |rd| Room.new(rd) }
+      end
         
       # Internal: Handle errors returned by the API.
       #
@@ -258,7 +274,7 @@ module Suitcase
                   :amenities, :tripadvisor_rating, :location_description,
                   :short_description, :high_rate, :low_rate, :currency,
                   :latitude, :longitude, :proximity_distance, :proximity_unit,
-                  :in_destination, :thumbnail_path, :ian_url
+                  :in_destination, :thumbnail_path, :ian_url, :rooms
 
     # Internal: Create a new Hotel.
     #
@@ -270,28 +286,74 @@ module Suitcase
 
     # Internal: A small wrapper around the results of an EAN API call.
     class Result
-      attr_reader :url, :params, :raw, :parsed
+      attr_reader :url, :params, :raw, :value
 
       # Internal: Create a new Result.
       #
       # url     - String URL of the request.
       # params  - Hash of the params used in the request.
       # raw     - String, raw results of the request.
-      # parsed  - Whatever parsed information is to be returned.
-      def initialize(url, params, raw, parsed)
-        @url, @params, @raw, @parsed = url, params, raw, parsed
+      # value   - Whatever parsed information is to be returned.
+      def initialize(url, params, raw, value)
+        @url, @params, @raw, @value = url, params, raw, value
       end
     end
     
     # Internal: The general Exception class for Exceptions caught form the Hotel
     #           API.
     class EANException < Exception
-      attr_accessor :raw, :verbose_message, :reservation_id, :recoverability
+      # Public: The raw error returned by the API.
+      attr_accessor :raw
       
+      # Public: The verbose message returned by the API.
+      attr_accessor :verbose_message
+      
+      # Public: The ID of the reservation made in the errant
+      #         request if a reservation completed.
+      attr_accessor :reservation_id
+
+      # Public: The recoverability of the error (direct from the)
+      #         API.
+      attr_accessor :recoverability
+      
+      # Internal: Writer for the boolean whether a reservation was made.
       attr_writer :reservation_made
       
+      # Public: Reader for the boolean whether a reservation was made. If a
+      #         reservation was completed `reservation_id' will contain the
+      #         reservation ID.
       def reservation_made?
         @reservation_made
+      end
+    end
+    
+    # Internal: Representation of room availability as returned by the API.
+    class Room
+      Promotion = Struct.new(:id, :description, :details)
+      
+      attr_accessor :room_type_code, :rate_code, :rate_key, :max_occupancy,
+                    :quoted_occupancy, :minimum_age, :description, :promotion,
+                    :allotment, :available, :restricted, :expedia_id
+
+      def initialize(room_details)
+        @room_type_code = room_details["roomTypeCode"]
+        @rate_code = room_details["rateCode"]
+        @rate_key = room_details["rateKey"]
+        @max_occupancy = room_details["maxRoomOccupancy"]
+        @quoted_occupancy = room_details["quotedRoomOccupancy"]
+        @minimum_age = room_details["minGuestAge"]
+        @description = room_details["roomDescription"]
+        if room_details["promoId"]
+          promotion = Promotion.new(
+            room_details["promoId"],
+            room_details["promoDescription"],
+            room_details["promoDetailText"]
+          )
+        end
+        @allotment = room_details["currentAllotment"]
+        @available = room_details["propertyAvailable"]
+        @restricted = room_details["propertyRestricted"]
+        @expedia_id = room_details["expediaPropertyId"]
       end
     end
   end
