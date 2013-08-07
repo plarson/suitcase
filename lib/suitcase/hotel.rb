@@ -193,7 +193,9 @@ module Suitcase
               hotel.id = data["hotelId"]
               hotel.name = data["name"]
               hotel.address = data["address1"]
-              hotel.address += data["address2"] if data["address2"]
+              if data["address2"]
+                hotel.address = [hotel.address, data["address2"]].join(", ")
+              end
               hotel.city = data["city"]
               hotel.province = data["stateProvinceCode"]
               hotel.postal = data["postalCode"]
@@ -219,6 +221,26 @@ module Suitcase
             end
           end
         end
+      end  
+        
+      # Internal: Handle errors returned by the API.
+      #
+      # error - The parsed error Hash returned by the API.
+      #
+      # Raises an EANException with the parameters returned by the API.
+      def handle(error)
+        message = error["presentationMessage"]
+      
+        e = EANException.new(message)
+        if error["itineraryId"] != -1
+          e.reservation_made = true
+          e.reservation_id = error["itineraryId"]
+        end
+        e.verbose_message = error["verboseMessage"]
+        e.recoverability = error["handling"]
+        e.raw = error
+        
+        raise e
       end
       
       # Internal: Parse the amenities of a Hotel.
@@ -260,6 +282,17 @@ module Suitcase
         @url, @params, @raw, @parsed = url, params, raw, parsed
       end
     end
+    
+    # Internal: The general Exception class for Exceptions caught form the Hotel
+    #           API.
+    class EANException < Exception
+      attr_accessor :raw, :verbose_message, :reservation_id, :recoverability
+      
+      attr_writer :reservation_made
+      
+      def reservation_made?
+        @reservation_made
+      end
+    end
   end
 end
-
