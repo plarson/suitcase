@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = Suitcase::VERSION
   s.authors     = ["Walter Nelson"]
   s.email       = ["walter.john.nelson@gmail.com"]
-  s.homepage    = "http://github.com/thoughtfusion/suitcase"
+  s.homepage    = "http://github.com/walternelson/suitcase"
   s.summary     = %q{Ruby gem for interacting with the EAN Hotel API.}
   s.description = %q{Suitcase is a complete library for interacting with the EAN (Expedia.com) Hotel API.}
 

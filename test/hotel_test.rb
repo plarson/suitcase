@@ -21,7 +21,8 @@ describe Suitcase::Hotel do
         arrival: "03/14/2014",
         departure: "03/21/2014",
         location: "Boston",
-        rooms: [{ adults: 1 }]
+        rooms: [{ adults: 1 }],
+        include_details: true # necessary for two-step reservation
       )
     end
 
