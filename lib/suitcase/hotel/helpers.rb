@@ -72,7 +72,7 @@ module Suitcase
       # Returns the URL.
       def main_url(secure)
         url = "http#{secure ? "s" : ""}://#{secure ? "book." : ""}"
-        url += Configuration.hostname + "/ean-services/rs/hotel/v3/"
+        url += (Configuration.hostname ||= "api.ean.com") + "/ean-services/rs/hotel/v3/"
         url
       end
 
