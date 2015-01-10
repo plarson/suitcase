@@ -13,13 +13,27 @@ describe Suitcase::Hotel do
     it "offers the raw response" do
       @result.raw.wont_be_nil
     end
+
+    it "offers the URL used to fetch the response" do
+      @result.url.wont_be_nil
+    end
+
+    it "includes an Array of Hotel objects" do
+      h = @result.value
+      h.must_be_kind_of Array
+      types = h.map { |o| o.class }.uniq
+      types.length.must_equal 1
+      types.first.must_equal Suitcase::Hotel
+    end
   end
 
   describe "availability search" do
     before :each do
+      arrival = Chronic.parse('1 month from now').strftime('%m/%d/%Y')
+      departure = Chronic.parse('5 weeks from now').strftime('%m/%d/%Y')
       @result = Suitcase::Hotel.find(
-        arrival: "03/14/2014",
-        departure: "03/21/2014",
+        arrival: arrival, 
+        departure: departure,
         location: "Boston",
         rooms: [{ adults: 1 }],
         include_details: true # necessary for two-step reservation
@@ -28,6 +42,23 @@ describe Suitcase::Hotel do
 
     it "returns a Hotel::Result" do
       @result.must_be_kind_of Suitcase::Hotel::Result
+    end
+
+    it "offers the raw response" do
+      @result.raw.wont_be_nil
+    end
+
+    it "offers the URL used to fetch the response" do
+      @result.url.wont_be_nil
+    end
+
+    it "includes an Array of Hotel objects" do
+      h = @result.value
+      binding.pry
+      h.must_be_kind_of Array
+      types = h.map { |o| o.class }.uniq
+      types.length.must_equal 1
+      types.first.must_equal Suitcase::Hotel
     end
   end
   
@@ -48,6 +79,14 @@ describe Suitcase::Hotel do
     
     it "should set the raw API results on the Exception" do
       @exception.raw.wont_be_nil
+    end
+
+    it "offers the verbose API message" do
+      @exception.verbose_message.wont_be_nil
+    end
+
+    it "offers the recoverability of the error" do
+      @exception.recoverability.wont_be_nil
     end
   end
 end

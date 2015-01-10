@@ -80,8 +80,10 @@ module Suitcase
       #
       # params - A Hash of search query parameters, unchanged from the find
       #           method:
-      #           :arrival            - String date of arrival, written MM/DD/YYYY.
-      #           :departure          - String date of departure, written MM/DD/YYYY.
+      #           :arrival            - String date of arrival, written
+      #                                 MM/DD/YYYY.
+      #           :departure          - String date of departure, written
+      #                                 MM/DD/YYYY.
       #           :number_of_results  - Integer number of results to return.
       #           :rooms              - An Array of Hashes, within each Hash:
       #                                 :adults   - Integer number of adults in
@@ -96,14 +98,15 @@ module Suitcase
       #
       # Returns a Result with search results.
       def availability_search(params)
-        req_params = room_group({
+        room_group_params = room_group_params(params[:rooms])
+        req_params = {
           arrivalDate: params[:arrival],
           departureDate: params[:departure],
           numberOfResults: params[:number_of_results],
           includeDetails: params[:include_details],
           includeHotelFeeBreakdown: params[:fee_breakdown],
           destinationString: params[:location]
-        }, params[:rooms])
+        }.merge(room_group_params)
 
         hotel_list(req_params)
       end
@@ -120,20 +123,20 @@ module Suitcase
       
       # Internal: Format the room group expected by the EAN API.
       #
-      # req_params  - The request parameters already set.
-      # rooms       - Array of Hashes:
-      #               :adults - Integer number of adults in the room.
-      #               :children - Array of children ages in the room (default: []).
+      # rooms - Array of Hashes:
+      #         :adults - Integer number of adults in the room.
+      #         :children - Array of children ages in the room (default: []).
       #
       # Returns a Hash of request parameters.
-      def room_group(req_params, rooms)
+      def room_group_params(rooms)
+        params = {}
         rooms.each_with_index do |room, index|
           room_n = index + 1
-          req_params["room#{room_n}"] = [room[:adults], room[:children]].
+          params["room#{room_n}"] = [room[:adults], room[:children]].
                                         flatten.join(",")
         end
 
-        req_params
+        params
       end
 
       # Internal: Complete the request for a Hotel list.
@@ -158,9 +161,9 @@ module Suitcase
       #
       # Returns a Result with search results.
       def hotel_list(req_params)
-        req_params[:cid] = Suitcase::Configuration.ean_hotel_cid
-        req_params[:apiKey] = Suitcase::Configuration.ean_hotel_api_key
-        req_params[:minorRev] = Suitcase::Configuration.ean_hotel_minor_rev
+        req_params[:cid] = Suitcase.configuration[:cid]
+        req_params[:apiKey] = Suitcase.configuration[:api_key]
+        req_params[:minorRev] = Suitcase.configuration[:minor_rev]
         req_params = req_params.delete_if { |k, v| v == nil }
 
         req = Patron::Session.new
@@ -173,7 +176,7 @@ module Suitcase
                     end
         end
         req.timeout = 30
-        req.base_url = "http://api.ean.com"
+        req.base_url = base_url(false) # not a booking request
         res = req.get("/ean-services/rs/hotel/v3/list?#{params_string}")
 
         Result.new(res.url, req_params, res.body, parse_hotel_list(res.body))
@@ -267,6 +270,25 @@ module Suitcase
       def parse_amenities(mask)
         AMENITIES.select { |amenity, amask| (mask & amask) > 0 }.keys
       end
+
+      # Internal: Return the base URL, based on whether it's a booking, secure,
+      #           or development request.
+      #
+      # booking - Boolean. The request will be sent securely to "book.api.ean.co
+      #           m."
+      #
+      # Returns a String URL for usage with the Patron base_url method.
+      def base_url(booking)
+        if Suitcase.configuration[:development]
+          return "http://dev.api.ean.com"
+        else
+          if booking
+            return "https://book.api.ean.com"
+          else
+            return "http://api.ean.com"
+          end
+        end
+      end
     end
 
     attr_accessor :id, :name, :address, :city, :province, :postal, :country,
@@ -312,8 +334,7 @@ module Suitcase
       #         request if a reservation completed.
       attr_accessor :reservation_id
 
-      # Public: The recoverability of the error (direct from the)
-      #         API.
+      # Public: The recoverability of the error (direct from the) API.
       attr_accessor :recoverability
       
       # Internal: Writer for the boolean whether a reservation was made.
@@ -358,3 +379,4 @@ module Suitcase
     end
   end
 end
+
