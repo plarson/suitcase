@@ -25,6 +25,26 @@ describe Suitcase::Hotel do
       types.length.must_equal 1
       types.first.must_equal Suitcase::Hotel
     end
+
+    describe "room method through API request" do
+      before :each do
+        arrival = Chronic.parse('1 month from now').strftime('%m/%d/%Y')
+        departure = Chronic.parse('5 weeks from now').strftime('%m/%d/%Y')
+        @hotel = @result.value.first
+        @result = @hotel.rooms(arrival: arrival, departure: departure,
+                              rooms: [{ adults: 1 }])
+      end
+
+      it "returns a Suitcase::Hotel::Room::Result" do
+        @result.must_be_kind_of Suitcase::Hotel::Room::Result
+      end
+
+      it "takes an options list" do
+        result = @hotel.rooms(arrival: arrival, departure: departure,
+                              rooms: [{ adults: 1 }], options: [:hotel_details])
+        result.hotel_details.wont_be_nil
+      end
+    end
   end
 
   describe "availability search" do
@@ -54,7 +74,6 @@ describe Suitcase::Hotel do
 
     it "includes an Array of Hotel objects" do
       h = @result.value
-      binding.pry
       h.must_be_kind_of Array
       types = h.map { |o| o.class }.uniq
       types.length.must_equal 1
