@@ -2,7 +2,6 @@ require "patron"
 require "json"
 require "net/http"
 require "digest/md5"
-require "date/format"
 require "time"
 
 require "suitcase/version"
