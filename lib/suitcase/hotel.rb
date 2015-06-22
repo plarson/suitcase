@@ -215,7 +215,7 @@ module Suitcase
         tripadvisor_rating: summary["tripAdvisorRating"],
         deep_link: summary["deepLink"]
       )
-      parsed_info[:amenities] = parsed["HotelInformationResponse"]["PropertyAmenities"]["PropertyAmenity"].map do |x|
+      parsed_info[:amenities] = parsed_array(parsed["HotelInformationResponse"]["PropertyAmenities"]["PropertyAmenity"]).map do |x|
         Amenity.new(id: x["amenityId"], description: x["amenity"])
       end if parsed["HotelInformationResponse"]
       parsed_info[:images] = images(parsed) if images(parsed)
@@ -240,15 +240,25 @@ module Suitcase
     #
     # Returns an Array of Image.
     def self.images(parsed)
-      images = parsed["HotelInformationResponse"]["HotelImages"]["HotelImage"].map do |image_data|
+      images = parsed_array(parsed["HotelInformationResponse"]["HotelImages"]["HotelImage"]).map do |image_data|
         Suitcase::Image.new(image_data)
       end if parsed["HotelInformationResponse"] && parsed["HotelInformationResponse"]["HotelImages"] && parsed["HotelInformationResponse"]["HotelImages"]["HotelImage"]
-      
+
       unless parsed["thumbNailUrl"].nil? or parsed["thumbNailUrl"].empty?
         images = [Suitcase::Image.new("thumbnailURL" => "http://images.travelnow.com" + parsed["thumbNailUrl"])]
       end
 
       images || []
+    end
+
+    # Internal: Wraps an JSON formatted XML array.
+    #
+    # array - The intended array.
+    #
+    # Returns an Array.
+    def self.parsed_array(array)
+      array = [ array ] unless parsed_images.is_a?(Array)
+      array
     end
 
     # Internal: Split an Array of multiple Hotels.
