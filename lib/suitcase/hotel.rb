@@ -20,7 +20,7 @@ module Suitcase
 
     # Public: The Amenities that can be passed in to searches, and are returned
     #         from many queries.
-    AMENITIES = { 
+    AMENITIES = {
       pool: 1,
       fitness_center: 2,
       restaurant: 3,
@@ -147,8 +147,8 @@ module Suitcase
         params.delete(:location)
       end
 
-      amenities = params[:amenities] ? params[:amenities].map {|amenity| 
-        AMENITIES[amenity] 
+      amenities = params[:amenities] ? params[:amenities].map {|amenity|
+        AMENITIES[amenity]
       }.join(",") : nil
       params[:amenities] = amenities if amenities
 
@@ -182,7 +182,7 @@ module Suitcase
     # Returns a reformatted Hash with the specified accessors.
     def self.parse_information(parsed)
       handle_errors(parsed)
-      
+
       if parsed["hotelId"]
         summary = parsed
         parsed_info = {}
@@ -257,7 +257,7 @@ module Suitcase
     #
     # Returns an Array.
     def self.parsed_array(array)
-      array = [ array ] unless parsed_images.is_a?(Array)
+      array = [ array ] unless array.is_a?(Array)
       array
     end
 
